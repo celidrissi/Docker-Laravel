@@ -1,0 +1,10 @@
+@import "variables";
+
+.alert {
+    margin-bottom: 0;
+}
+
+.alert-danger {
+    background-color: $light-red;
+    color: $dark-red;
+}

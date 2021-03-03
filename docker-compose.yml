@@ -1,0 +1,76 @@
+version: '3'
+services:
+
+  #PHP Service
+  app:
+    build: # Cherche un docker file
+      context: . # Emplacement / Contexte
+      dockerfile: dockerfile # Nom du dockerfile 
+    image: alpine # Nom de l'image chargé à partir du docker hub 
+    container_name: app # Nom du service
+    restart: unless-stopped # Condition de redémarrage
+    tty: true # Terminal local au docker
+    environment: # Varaibles d'environnement du docker
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    volumes: # Echange de fichier entre le docker et la machine hebergeante
+      - ./:/var/www
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks: # Réseau local docker
+      - app-network
+
+  #Nginx Service
+  webserver:
+    image: nginx:alpine # Nom de l'image chargé à partir du docker hub 
+    container_name: webserver # Nom de l'image chargé à partir du docker hub 
+    restart: unless-stopped # Condition de redémarrage
+    tty: true # Terminal local au docker
+    ports: # Port de redirection http/s machine > docker
+      - "80:80"
+      - "443:443"
+    volumes: # Echange de fichier entre le docker et la machine hebergeante
+      - ./:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks: # Réseau local docker
+      - app-network
+
+  #MySQL Service
+  mysql:
+    image: mysql:5.7.22 # Nom de l'image chargé à partir du docker hub 
+    container_name: mysql # Nom de l'image chargé à partir du docker hub
+    restart: unless-stopped # Condition de redémarrage
+    tty: true # Terminal local au docker
+    ports: # Port de redirection mysql machine > docker
+      - "3306:3306"
+    environment: # Varaibles d'environnement du docker
+      MYSQL_DATABASE: webreathe
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes: # Echange de fichier entre le docker et la machine hebergeante
+      - dbdata:/var/lib/mysql/
+      - ./mysql/my.cnf:/etc/mysql/my.cnf
+    networks: # Réseau local docker
+      - app-network
+
+  #PhpMyAdmin Service
+  phpmyadmin:
+    image: phpmyadmin # Nom de l'image chargé à partir du docker hub 
+    container_name: phpmyadmin # Nom de l'image chargé à partir du docker hub
+    restart: unless-stopped # Nom de l'image chargé à partir du docker hub
+    ports: # Port de redirection machine > docker
+      - 8080:80
+    environment: # Varaibles d'environnement du docker
+      - PMA_ARBITRARY=1
+    networks: # Réseau local docker
+      - app-network  
+      
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
+#Volumes
+volumes:
+  dbdata:
+    driver: local
